@@ -29,9 +29,9 @@ wheels/
 MANIFEST
 
 # Database
-*.db
-*.sqlite
-*.sqlite3
+# *.db
+# *.sqlite
+# *.sqlite3
 
 # IDE
 .vscode/
@@ -62,7 +62,7 @@ Thumbs.db
 htmlcov/
 
 # Instance folder
-instance/
+# instance/
 
 # Flask
 .webassets-cache/
