@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard - WhatsApp Style</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* WhatsApp Color Palette Variables */
+        :root {
+            /* Light Mode Colors */
+            --wa-teal: #00a884;
+            --wa-teal-deep: #008f72;
+            --wa-bg: #eae6df;
+            --wa-surface: #ffffff;
+            --wa-header-bg: #f0f2f5;
+            --wa-text-primary: #111b21;
+            --wa-text-secondary: #667781;
+            --wa-border: #e9edef;
+            --wa-badge: #25d366;
+            --wa-avatar-bg: #dfe5e7;
+            --wa-btn-secondary: #f0f2f5;
+            --wa-btn-secondary-hover: #e3e6ea;
+            --wa-btn-secondary-border: #e1e4e7;
+        }
+
+        /* Dark Mode Override Styles */
+        [data-theme="dark"] {
+            --wa-bg: #0b141a;
+            --wa-surface: #111b21;
+            --wa-header-bg: #202c33;
+            --wa-text-primary: #e9edef;
+            --wa-text-secondary: #8696a0;
+            --wa-border: #222e35;
+            --wa-badge: #00a884;
+            --wa-avatar-bg: #2a3942;
+            --wa-btn-secondary: #202c33;
+            --wa-btn-secondary-hover: #2a3942;
+            --wa-btn-secondary-border: #2f3b43;
+        }
+
+        body {
+            background-color: var(--wa-bg);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: var(--wa-text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .dashboard-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: var(--wa-surface);
+            min-height: 100vh;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            transition: background 0.3s;
+        }
+
+        /* Header WhatsApp Style */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 16px;
+            background-color: var(--wa-header-bg);
+            border-bottom: 1px solid var(--wa-border);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background-color: #53bdeb;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            text-transform: uppercase;
+        }
+
+        .dashboard-header h1 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--wa-text-primary);
+            font-weight: 600;
+        }
+
+        .header-right-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* Dark Mode Toggle Button */
+        .theme-toggle-btn {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--wa-text-primary);
+            transition: background-color 0.2s;
+        }
+        
+        .theme-toggle-btn:hover {
+            background-color: rgba(128, 128, 128, 0.15);
+        }
+
+        .user-info {
+            text-align: right;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info .username {
+            font-weight: 600;
+            color: var(--wa-text-primary);
+            font-size: 15px;
+        }
+
+        .user-info a {
+            color: #ea0038;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .user-info a:hover {
+            text-decoration: underline;
+        }
+
+        /* Action Bar / Utility Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            padding: 12px 16px;
+            background-color: var(--wa-surface);
+            border-bottom: 1px solid var(--wa-border);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .btn-large {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-primary-large {
+            background-color: var(--wa-teal);
+            color: white;
+        }
+
+        .btn-primary-large:hover {
+            background-color: var(--wa-teal-deep);
+        }
+
+        .btn-secondary-large {
+            background-color: var(--wa-btn-secondary);
+            color: var(--wa-text-primary);
+            border: 1px solid var(--wa-btn-secondary-border);
+        }
+
+        .btn-secondary-large:hover {
+            background-color: var(--wa-btn-secondary-hover);
+        }
+
+        /* Rooms Section / Chat List */
+        .rooms-section {
+            flex: 1;
+            background: var(--wa-surface);
+            transition: background 0.3s;
+        }
+
+        .rooms-section h2 {
+            font-size: 14px;
+            color: var(--wa-teal);
+            padding: 12px 16px 4px 16px;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .room-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* WhatsApp Chat Row Item */
+        .room-card-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: var(--wa-surface);
+            transition: background 0.15s;
+            border-bottom: 1px solid var(--wa-border);
+        }
+
+        .room-card-wrapper:hover {
+            background-color: var(--wa-header-bg);
+        }
+
+        /* Mock Chat Avatar Left Side */
+        .room-avatar-mock {
+            position: absolute;
+            left: 16px;
+            width: 45px;
+            height: 45px;
+            background-color: var(--wa-avatar-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            z-index: 1;
+            pointer-events: none;
+            transition: background-color 0.3s;
+        }
+
+        .room-card {
+            flex: 1;
+            padding: 12px 16px 12px 76px;
+            text-decoration: none;
+            color: inherit;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .room-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .room-title {
+            font-weight: 500;
+            font-size: 16px;
+            color: var(--wa-text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding-right: 40px;
+        }
+
+        .room-date {
+            font-size: 12px;
+            color: var(--wa-text-secondary);
+            white-space: nowrap;
+        }
+
+        .room-preview {
+            font-size: 13.5px;
+            color: var(--wa-text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin: 0;
+        }
+
+        .room-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--wa-text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Notification Badge style */
+        .room-msg-count {
+            background: var(--wa-badge);
+            color: white;
+            padding: 2px 7px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+            min-width: 10px;
+            text-align: center;
+        }
+
+        /* Modernized Hover Actions */
+        .btn-delete-room {
+            position: absolute;
+            right: 16px;
+            bottom: 12px;
+            background: transparent;
+            border: none;
+            color: #b1b9be;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+            transition: all 0.2s;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .room-card-wrapper:hover .btn-delete-room {
+            color: #ef4444;
+        }
+
+        .btn-delete-room:hover {
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--wa-text-secondary);
+        }
+
+        .empty-state p {
+            margin: 0 0 8px 0;
+            font-size: 15px;
+        }
+    </style>
+    <script>
+        // Inline script untuk mencegah "flicker" putih saat membuka halaman jika dalam dark mode
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+</head>
+<body>
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div class="header-left">
+            {% if user %}
+            <div class="user-avatar">{{ user.username[0] }}</div>
+            {% else %}
+            <div class="user-avatar">G</div>
+            {% endif %}
+            <h1>WhatsApp Dashboard</h1>
+        </div>
+        <div class="header-right-controls">
+            <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Ganti Tema">☀️</button>
+            
+            <div class="user-info">
+                {% if user %}
+                <div class="username">{{ user.username }}</div>
+                {% else %}
+                <div class="username">Guest</div>
+                {% endif %}
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="btn-large btn-primary-large" onclick="goToHome()">🟢 Buat Chat Baru</button>
+        <button id="joinBtn" class="btn-large btn-secondary-large" data-join-url="{{ url_for('join_chat', link='') }}" onclick="goToJoin()">🔗 Join via Link</button>
+    </div>
+
+    <div class="rooms-section">
+        <h2>Riwayat Chat</h2>
+        <div id="roomList" class="room-list">
+            <div class="empty-state">
+                <p>⏳ Memuat riwayat chat...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Fungsi Manajemen Tema (Dark/Light)
+function updateToggleIcon(theme) {
+    const btn = document.getElementById('themeToggleBtn');
+    if (!btn) return;
+    if (theme === 'dark') {
+        btn.innerText = '🌙';
+        btn.setAttribute('title', 'Ubah ke Mode Terang');
+    } else {
+        btn.innerText = '☀️';
+        btn.setAttribute('title', 'Ubah ke Mode Gelap');
+    }
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateToggleIcon(newTheme);
+}
+
+// Inisialisasi ikon saat DOM siap
+document.addEventListener('DOMContentLoaded', function() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    updateToggleIcon(currentTheme);
+    loadRooms();
+});
+
+function goToHome() {
+    window.location.href = '/';
+}
+
+function goToJoin() {
+    const btn = document.getElementById('joinBtn');
+    const url = btn ? (btn.getAttribute('data-join-url') || '') : '';
+    window.location.href = url ? url.slice(0, -1) : '/';
+}
+
+async function loadRooms() {
+    try {
+        const response = await fetch('/api/user/rooms');
+        const data = await response.json();
+        
+        if (!response.ok) {
+            showError('Gagal memuat riwayat chat');
+            return;
+        }
+        
+        displayRooms(data.rooms);
+    } catch (error) {
+        console.error('Error:', error);
+        showError('Tidak dapat terhubung ke server');
+    }
+}
+
+function displayRooms(rooms) {
+    const roomList = document.getElementById('roomList');
+    if (!rooms || !Array.isArray(rooms) || rooms.length === 0) {
+        roomList.innerHTML = `
+            <div class="empty-state">
+                <p>📭 Belum ada riwayat chat</p>
+                <p style="font-size: 13px;">Buat atau join chat baru untuk memulai</p>
+            </div>
+        `;
+        return;
+    }
+    
+    roomList.innerHTML = rooms.map(room => {
+        const id = room && room.room_id ? room.room_id : '';
+        const name = room && room.name ? escapeHtml(room.name) : 'Chat';
+        const created = room && room.created_at ? (String(room.created_at).split(' ')[0]) : '';
+        const count = room && (room.message_count || room.message_count === 0) ? room.message_count : 0;
+        
+        let previewText = '';
+        if (room && room.last_message) {
+            if (String(room.last_message).includes('/media/')) {
+                previewText = '📷 [Foto]';
+            } else {
+                previewText = `${escapeHtml(truncate(room.last_message, 45))}`;
+            }
+        }
+
+        const lastTime = room && room.last_message_time ? formatTimestamp(room.last_message_time) : '';
+
+        return `
+        <div class="room-card-wrapper" id="room-wrap-${id}">
+            <div class="room-avatar-mock">💬</div>
+            <a href="/chat/${id}" class="room-card">
+                <div class="room-card-header">
+                    <div class="room-title">${name}</div>
+                    <div class="room-date">${lastTime ? lastTime : created}</div>
+                </div>
+                ${previewText ? `
+                    <div class="room-preview">${previewText}</div>
+                    <div class="room-meta">
+                        <span style="font-size:11px; color: var(--wa-text-secondary);">Dibuat: ${created}</span>
+                        <span class="room-msg-count">${count}</span>
+                    </div>
+                ` : `
+                    <div class="room-preview" style="color: var(--wa-text-secondary); font-style: italic;">Belum ada pesan</div>
+                    <div class="room-meta">
+                        <span></span>
+                        <span class="room-msg-count" style="background:#b1b9be;">0</span>
+                    </div>
+                `}
+            </a>
+            <button class="btn-delete-room" title="Hapus Room" onclick="deleteRoom(event, '${id}')">✕</button>
+        </div>
+    `;
+    }).join('');
+}
+
+async function deleteRoom(event, roomId) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!confirm('Apakah Anda yakin ingin menghapus room chat ini beserta seluruh riwayat dan medianya?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/room/${roomId}`, {
+            method: 'DELETE'
+        });
+        const data = await response.json();
+
+        if (response.ok && data.status === 'deleted') {
+            const el = document.getElementById(`room-wrap-${roomId}`);
+            if (el) el.remove();
+            
+            const roomList = document.getElementById('roomList');
+            if (roomList.children.length === 0) {
+                displayRooms([]);
+            }
+        } else {
+            alert(data.error || 'Gagal menghapus room');
+        }
+    } catch (error) {
+        console.error('Error deleting room:', error);
+        alert('Gagal terhubung ke server untuk menghapus room');
+    }
+}
+
+function formatTimestamp(tsStr) {
+    if (!tsStr) return '';
+    try {
+        const d = new Date(tsStr.replace(/-/g, '/')); 
+        if (isNaN(d.getTime())) return tsStr;
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+        return tsStr;
+    }
+}
+
+// Pemotong text panjang
+function truncate(str, len) {
+    if (str === undefined || str === null) return '';
+    const s = String(str);
+    return s.length > len ? s.substring(0, len) + '...' : s;
+}
+
+// Sanitasi HTML
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    if (text === undefined || text === null) return '';
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+function showError(msg) {
+    const roomList = document.getElementById('roomList');
+    roomList.innerHTML = `
+        <div class="empty-state" style="color: #ef4444;">
+            <p>⚠️ ${escapeHtml(msg)}</p>
+        </div>
+    `;
+}
+</script>
+</body>
+</html>

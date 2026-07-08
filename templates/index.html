@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Terenkripsi - Mulai Berbincang</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="card welcome-card">
+            <div class="header">
+                <div class="logo">💬</div>
+                <h1>Chat Terenkripsi</h1>
+                <p class="subtitle">Percakapan privat Anda, terlindungi sepenuhnya</p>
+                <div class="auth-links">
+                    {% if session.get('user_name') %}
+                        <div class="logged-in">Masuk sebagai <strong>{{ session.get('user_name') }}</strong> • <a href="{{ url_for('logout') }}">Logout</a></div>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="small-link">Login</a>
+                        <span> | </span>
+                        <a href="{{ url_for('register') }}" class="small-link">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="name">Siapa nama Anda?</label>
+                    <input 
+                        type="text" 
+                        id="name" 
+                        placeholder="Masukkan nama Anda"
+                        maxlength="50"
+                        autocomplete="off"
+                    >
+                    <small>Minimal 2 karakter</small>
+                </div>
+                
+                <button id="createBtn" class="btn btn-primary">
+                    <span>Buat Chat Room Baru</span>
+                </button>
+            </div>
+            
+            <div class="divider">atau</div>
+            
+            <div class="info-section">
+                <h3>Sudah punya link?</h3>
+                <p>Mintalah link dari teman Anda dan klik untuk bergabung</p>
+                <div class="info-box">
+                    <span class="icon">🔗</span>
+                    <span>Link akan dibagikan otomatis setelah chat room dibuat</span>
+                </div>
+            </div>
+            
+            <div class="features">
+                <h3>Fitur Keamanan:</h3>
+                <ul>
+                    <li>✅ Enkripsi end-to-end untuk semua pesan</li>
+                    <li>✅ Link unik yang tidak bisa ditebak</li>
+                    <li>✅ Indikator online/offline real-time</li>
+                    <li>✅ Akses hanya dengan link, tidak perlu login</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="loadingModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="spinner"></div>
+            <p>Membuat chat room...</p>
+        </div>
+    </div>
+
+    <div id="successModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="success-icon">✓</div>
+            <h2>Chat Room Berhasil Dibuat!</h2>
+            <p>Bagikan link ini kepada teman Anda:</p>
+            
+            <div class="link-container">
+                <input type="text" id="linkInput" readonly>
+                <button id="copyBtn" class="btn btn-secondary">Salin</button>
+            </div>
+            
+            <div class="qr-container">
+                <div id="qrcode"></div>
+                <small>Atau pindai QR code ini</small>
+            </div>
+            
+            <button id="continueBtn" class="btn btn-primary">Lanjut ke Chat</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</body>
+</html>

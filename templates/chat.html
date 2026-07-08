@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server - {{ user_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* CSS Tambahan untuk Fitur Reply & Struktur Konten */
+        .message-bubble {
+            position: relative;
+            padding-bottom: 22px !important; /* Memberikan ruang wajib di bawah agar teks tidak tertimpa jam */
+            min-width: 90px; /* Menjaga bubble teks pendek agar tidak terlalu sempit untuk area jam */
+            word-wrap: break-word;
+        }
+        
+        /* Kotak Preview Reply nempel di atas Input Area */
+        .reply-preview-container {
+            display: none;
+            background: rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #00a884;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            position: relative;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .reply-preview-sender {
+            font-weight: 600;
+            font-size: 13px;
+            color: #00a884;
+            margin-bottom: 2px;
+        }
+        .reply-preview-text {
+            font-size: 13px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 25px;
+        }
+        .reply-close-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--text-muted);
+        }
+
+        /* Tampilan Kotak Reply di DALAM Bubble Chat */
+        .message-reply-box {
+            background: rgba(0, 0, 0, 0.06);
+            border-left: 3px solid #00a884;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            text-align: left;
+        }
+        .message-reply-box .reply-sender {
+            font-weight: bold;
+            color: #53bdeb;
+            margin-bottom: 2px;
+        }
+        .message.sent .message-reply-box .reply-sender {
+            color: #35a17b;
+        }
+        .message-reply-box .reply-content {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Tombol shortcut reply saat hover bubble chat */
+        .reply-trigger-btn {
+            position: absolute;
+            right: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--bg-chat, #fff);
+            border: 1px solid var(--border, #ccc);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            z-index: 5;
+            color: var(--text-main);
+        }
+        .message.sent .reply-trigger-btn {
+            left: -30px;
+            right: auto;
+        }
+        .message:hover .reply-trigger-btn {
+            display: flex;
+        }
+        
+        /* Efek kilatan saat menelusuri pesan asli */
+        @keyframes flashMessage {
+            0% { background-color: rgba(0, 168, 132, 0.4); }
+            100% { background-color: transparent; }
+        }
+        .flash-active {
+            animation: flashMessage 1.5s ease-out;
+            border-radius: 8px;
+        }
+
+        /* KUNCI UTAMA: Penyesuaian Meta Waktu & Centang agar sejajar & tidak tumpang tindih */
+        .message-meta-container {
+            position: absolute;
+            bottom: 4px;
+            right: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            user-select: none;
+            white-space: nowrap;
+            background: transparent;
+        }
+        .message-time {
+            font-size: 11px;
+            color: #8696a0;
+            display: inline-block;
+        }
+        .ticks-wrapper {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 14px;
+        }
+        .ticks-wrapper i {
+            font-size: 11px !important;
+            display: inline-block !important;
+            position: static !important; /* Menghapus warisan absolute bawaan library fontawesome */
+        }
+        .tick-blue {
+            color: #53bdeb;
+            font-weight: bold;
+        }
+        .tick-gray {
+            color: #8696a0;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="header-left">
+                <h2>{{ user_name }}</h2>
+            </div>
+            
+            <div class="header-center">
+                <span class="other-user">{{ other_user or 'Menunggu...' }}</span>
+                <div class="status-indicator">
+                    <span class="status-dot offline" id="statusDot"></span>
+                    <span id="statusText">Offline</span>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <button id="themeToggle" class="btn-theme" title="Toggle theme">🌙</button>
+                <button id="exitBtn" class="btn-icon" title="Keluar">
+                    ✕
+                </button>
+            </div>
+        </div>
+
+        <div class="messages-area" id="messagesArea">
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="message {% if msg.sender_id == user_id %}sent{% else %}received{% endif %}" id="msg-{{ msg.id }}">
+                        <div class="message-bubble">
+                            <button class="reply-trigger-btn" title="Balas" 
+                                data-id="{{ msg.id }}" 
+                                data-sender="{{ msg.sender_name | e }}" 
+                                data-content="{% if msg.type == 'image' %}[Foto]{% else %}{{ msg.content | e }}{% endif %}"
+                                onclick="initiateReplyFromBtn(this)">↩</button>
+                            
+                            {% if msg.parent_id %}
+                                <div class="message-reply-box" onclick="scrollToMessage('{{ msg.parent_id }}')">
+                                    <div class="reply-sender">@{{ msg.parent_sender_name }}</div>
+                                    <div class="reply-content">
+                                        {% if msg.parent_content.startswith('http') and ('.png' in msg.parent_content or '.jpg' in msg.parent_content or '.jpeg' in msg.parent_content or 'photo' in msg.parent_content) %}
+                                            [Foto]
+                                        {% else %}
+                                            {{ msg.parent_content }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            <div class="message-sender">{{ msg.sender_name }}</div>
+                            {% if msg.type == 'image' %}
+                                <div class="message-content"><img src="{{ msg.content | e }}" alt="photo" class="message-image"/></div>
+                            {% else %}
+                                <div class="message-content">{{ msg.content }}</div>
+                            {% endif %}
+                            
+                            <div class="message-meta-container">
+                                <div class="message-time" data-ts="{{ msg.timestamp }}">{{ msg.timestamp }}</div>
+                                {% if msg.sender_id == user_id %}
+                                    <div class="ticks-wrapper ticks" data-status="{{ msg.status or '1' }}"></div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">💬</div>
+                    <p>Mulai percakapan baru</p>
+                    <small>Pesan Anda terenkripsi dan aman</small>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="input-area">
+            <div id="replyPreviewContainer" class="reply-preview-container">
+                <div id="replyPreviewSender" class="reply-preview-sender">Membalas</div>
+                <div id="replyPreviewText" class="reply-preview-text">Isi pesan asli...</div>
+                <div class="reply-close-btn" onclick="cancelReply()">✕</div>
+            </div>
+
+            <div class="input-container">
+                <input type="file" id="photoInput" accept="image/*" class="hidden" />
+                <button id="uploadPhotoBtn" class="btn-icon" title="Kirim foto">🔗</button>
+                
+                <textarea 
+                    id="messageInput" 
+                    placeholder="Ketik pesan..." 
+                    rows="1"
+                    maxlength="2000"
+                ></textarea>
+                
+                <button id="sendBtn" class="btn-send" title="Kirim">
+                    <span>➤</span>
+                </button>
+            </div>
+            <small id="charCount" class="char-count">0/2000</small>
+        </div>
+    </div>
+
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const roomId = '{{ room_id }}';
+        const userId = '{{ user_id }}';
+        const userName = '{{ user_name }}';
+        const otherUser = '{{ other_user }}';
+
+        // State Global untuk Menyimpan Data Reply
+        let currentReplyId = null;
+
+        // Initialize Socket.io
+        const socket = io({
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            reconnectionAttempts: 5
+        });
+
+        // DOM Elements
+        const messagesArea = document.getElementById('messagesArea');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const exitBtn = document.getElementById('exitBtn');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const charCount = document.getElementById('charCount');
+
+        // HELPER: Format Ikon Centang WhatsApp berdasarkan Integer Status
+        function getCheckmarkHTML(status) {
+            const s = parseInt(status || '1');
+            if (s === 1) {
+                return '<i class="fas fa-check tick-gray"></i>'; // Centang 1 Abu
+            } else if (s === 2) {
+                return '<i class="fas fa-check-double tick-gray"></i>'; // Centang 2 Abu
+            } else if (s === 3) {
+                return '<i class="fas fa-check-double tick-blue"></i>'; // Centang 2 Biru
+            }
+            return '';
+        }
+
+        // Auto-resize textarea
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            
+            const count = this.value.length;
+            charCount.textContent = `${count}/2000`;
+        });
+
+        // Fungsi Kontrol Fitur Reply
+        function initiateReply(messageId, senderName, messageText) {
+            currentReplyId = messageId;
+            document.getElementById('replyPreviewSender').innerText = `Membalas ${senderName}`;
+            document.getElementById('replyPreviewText').innerText = messageText;
+            document.getElementById('replyPreviewContainer').style.display = 'block';
+            messageInput.focus();
+        }
+
+        // Fungsi baru untuk menangani klik dari tombol HTML bawaan server
+        function initiateReplyFromBtn(btnElement) {
+            const msgId = btnElement.getAttribute('data-id');
+            const sender = btnElement.getAttribute('data-sender');
+            const content = btnElement.getAttribute('data-content');
+            initiateReply(msgId, sender, content);
+        }
+
+        function cancelReply() {
+            currentReplyId = null;
+            document.getElementById('replyPreviewContainer').style.display = 'none';
+        }
+
+        function scrollToMessage(parentId) {
+            const targetElement = document.getElementById(`msg-${parentId}`);
+            if (targetElement) {
+                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Animasi kilat penanda pesan
+                targetElement.classList.remove('flash-active');
+                void targetElement.offsetWidth; // Trigger reflow CSS
+                targetElement.classList.add('flash-active');
+                setTimeout(() => {
+                    targetElement.classList.remove('flash-active');
+                }, 1500);
+            } else {
+                showNotification('Pesan asli tidak ditemukan atau sudah terlalu lama', 'info');
+            }
+        }
+
+        // Send message (Diperbarui dengan parameter parent_id)
+        function sendMessage() {
+            const content = messageInput.value.trim();
+            
+            if (!content) return;
+            
+            socket.emit('send_message', {
+                room_id: roomId,
+                user_id: userId,
+                user_name: userName,
+                content: content,
+                parent_id: currentReplyId // Menyertakan ID pesan yang dibalas
+            });
+            
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            charCount.textContent = '0/2000';
+            cancelReply(); // Reset penanda balasan setelah terkirim
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Exit chat
+        exitBtn.addEventListener('click', () => {
+            if (confirm('Keluar dari chat? Percakapan akan tersimpan.')) {
+                socket.disconnect();
+                window.location.href = '/';
+            }
+        });
+
+        // Socket.io events
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            socket.emit('user_join', {
+                user_id: userId,
+                room_id: roomId,
+                user_name: userName
+            });
+            
+            // Mengirimkan event penanda semua pesan masuk di obrolan ini sudah dibaca pengguna
+            socket.emit('read_messages', { room_id: roomId, user_id: userId });
+            checkOnlineStatus();
+        });
+
+        setInterval(checkOnlineStatus, 3000);
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            statusDot.className = 'status-dot offline';
+            statusText.textContent = 'Offline';
+        });
+
+        socket.on('new_message', (data) => {
+            addMessageToChat(data);
+            // Jika kita menerima pesan baru dari pihak lawan, otomatis tandai sebagai telah dibaca
+            if (data.sender_id !== userId) {
+                socket.emit('read_messages', { room_id: roomId, user_id: userId });
+            }
+        });
+
+        // Event penanda bahwa pesan kita di obrolan ini telah dibaca secara keseluruhan oleh partner obrolan
+        socket.on('messages_read_update', (data) => {
+            if (data.room_id === roomId) {
+                document.querySelectorAll('.ticks').forEach(el => {
+                    el.setAttribute('data-status', '3');
+                    el.innerHTML = getCheckmarkHTML(3);
+                });
+            }
+        });
+
+        socket.on('user_status_changed', (data) => {
+            if (data.user_id !== userId) {
+                if (data.online) {
+                    statusDot.className = 'status-dot online';
+                    statusText.textContent = 'Online';
+                    showNotification(`${data.user_name} sudah online`, 'success');
+                    // Saat pihak lawan online, minta server memperbarui pesan kita yang tertunda menjadi dibaca
+                    socket.emit('read_messages', { room_id: roomId, user_id: userId });
+                } else {
+                    statusDot.className = 'status-dot offline';
+                    statusText.textContent = 'Offline';
+                    showNotification(`${data.user_name} sudah offline`, 'info');
+                }
+            }
+        });
+
+        socket.on('online_status', (data) => {
+            if (otherUser) {
+                if (data.user1_id !== userId && data.user1_online) {
+                    statusDot.className = 'status-dot online';
+                    statusText.textContent = 'Online';
+                } else if (data.user2_id !== userId && data.user2_online) {
+                    statusDot.className = 'status-dot online';
+                    statusText.textContent = 'Online';
+                } else {
+                    statusDot.className = 'status-dot offline';
+                    statusText.textContent = 'Offline';
+                }
+            }
+        });
+
+        socket.on('error', (data) => {
+            showNotification(data.message || 'Terjadi kesalahan', 'error');
+        });
+
+        // Helper functions
+        function formatTimestamp(ts) {
+            if (!ts) return '';
+            // Menangani parse format ISO/UTC String
+            const d = ts.endsWith('Z') || ts.includes('T') ? new Date(ts) : new Date(ts + 'Z');
+            if (isNaN(d.getTime())) return ts;
+            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+
+        // Dinamisasi addMessageToChat agar mendukung komponen Reply & Status Centang secara realtime
+        function addMessageToChat(msg) {
+            if (document.querySelector('.empty-state')) {
+                messagesArea.innerHTML = '';
+            }
+            const timeText = formatTimestamp(msg.timestamp);
+            let contentHtml = '';
+            if (msg.type === 'image') {
+                const safeUrl = escapeHtml(msg.content);
+                contentHtml = `<img src="${safeUrl}" alt="photo" class="message-image" />`;
+            } else {
+                contentHtml = escapeHtml(msg.content);
+            }
+
+            // Atur preview teks jika pesan baru ini membalas pesan lain
+            let replyBoxHtml = '';
+            if (msg.parent_id) {
+                const displayParentContent = (msg.parent_content.startsWith('http') && msg.parent_content.includes('photo')) ? '[Foto]' : escapeHtml(msg.parent_content);
+                replyBoxHtml = `
+                    <div class="message-reply-box" onclick="scrollToMessage('${msg.parent_id}')">
+                        <div class="reply-sender">@${escapeHtml(msg.parent_sender_name)}</div>
+                        <div class="reply-content">${displayParentContent}</div>
+                    </div>
+                `;
+            }
+
+            const textPreview = msg.type === 'image' ? '[Foto]' : escapeHtml(msg.content);
+            const safeSender = escapeHtml(msg.sender_name);
+            const isMe = msg.sender_id === userId;
+
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${isMe ? 'sent' : 'received'}`;
+            messageEl.id = `msg-${msg.id}`; // Pasang ID untuk fitur scroll target
+            
+            let ticksHtml = isMe ? `<div class="ticks-wrapper ticks" data-status="${msg.status || '1'}">${getCheckmarkHTML(msg.status || 1)}</div>` : '';
+
+            messageEl.innerHTML = `
+                <div class="message-bubble">
+                    <button class="reply-trigger-btn" title="Balas" onclick="initiateReply('${msg.id}', '${safeSender}', '${textPreview}')">↩</button>
+                    ${replyBoxHtml}
+                    <div class="message-sender">${safeSender}</div>
+                    <div class="message-content">${contentHtml}</div>
+                    <div class="message-meta-container">
+                        <div class="message-time" data-ts="${msg.timestamp}">${timeText}</div>
+                        ${ticksHtml}
+                    </div>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageEl);
+            try {
+                messageEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            } catch (e) {
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            }
+        }
+
+        // Konversi dan render status centang serta format waktu pada pemuatan awal (First load)
+        document.querySelectorAll('.message-time').forEach(el => {
+            const ts = el.dataset.ts || el.textContent;
+            el.textContent = formatTimestamp(ts);
+        });
+
+        document.querySelectorAll('.ticks').forEach(el => {
+            const status = el.getAttribute('data-status') || '1';
+            el.innerHTML = getCheckmarkHTML(status);
+        });
+
+        function scrollToBottom(smooth = true) {
+            if (!messagesArea) return;
+            if (smooth && 'scrollBehavior' in document.documentElement.style) {
+                messagesArea.scrollTo({ top: messagesArea.scrollHeight, behavior: 'smooth' });
+            } else {
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            }
+        }
+
+        scrollToBottom(true);
+
+        function checkOnlineStatus() {
+            socket.emit('check_online', {
+                room_id: roomId,
+                user_id: userId
+            });
+        }
+
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('fade-out');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Theme toggle handling
+        const themeToggleBtn = document.getElementById('themeToggle');
+
+        function applyTheme(theme) {
+            const root = document.documentElement;
+            root.classList.remove('theme-light', 'theme-dark');
+            if (theme === 'light') root.classList.add('theme-light');
+            else if (theme === 'dark') root.classList.add('theme-dark');
+
+            if (theme === 'dark') themeToggleBtn.textContent = '☀️';
+            else themeToggleBtn.textContent = '🌙';
+        }
+
+        function initTheme() {
+            const stored = localStorage.getItem('theme');
+            if (stored) {
+                applyTheme(stored);
+                return;
+            }
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            applyTheme(prefersDark ? 'dark' : 'light');
+        }
+
+        themeToggleBtn.addEventListener('click', () => {
+            const root = document.documentElement;
+            const isDark = root.classList.contains('theme-dark');
+            const newTheme = isDark ? 'light' : 'dark';
+            localStorage.setItem('theme', newTheme);
+            applyTheme(newTheme);
+        });
+
+        initTheme();
+
+        // Photo upload handling
+        const photoInput = document.getElementById('photoInput');
+        const uploadPhotoBtn = document.getElementById('uploadPhotoBtn');
+
+        uploadPhotoBtn.addEventListener('click', () => {
+            photoInput.click();
+        });
+
+        photoInput.addEventListener('change', async () => {
+            const file = photoInput.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                showNotification('Hanya file gambar yang diperbolehkan', 'error');
+                return;
+            }
+
+            const fd = new FormData();
+            fd.append('photo', file);
+            fd.append('room_id', roomId);
+            fd.append('user_id', userId);
+            fd.append('user_name', userName);
+
+            // Tambahkan parameter parent_id saat upload gambar jika sedang membalas pesan
+            if (currentReplyId) {
+                fd.append('parent_id', currentReplyId);
+            }
+
+            uploadPhotoBtn.disabled = true;
+            uploadPhotoBtn.textContent = '⏳';
+
+            try {
+                const res = await fetch('/upload-photo', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (!res.ok) {
+                    showNotification(data.error || 'Gagal mengunggah', 'error');
+                } else {
+                    showNotification('Foto terkirim', 'success');
+                }
+            } catch (e) {
+                showNotification('Gagal terhubung ke server', 'error');
+            } finally {
+                uploadPhotoBtn.disabled = false;
+                uploadPhotoBtn.textContent = '🔗';
+                photoInput.value = null;
+                cancelReply(); // Reset status balasan setelah foto terunggah
+            }
+        });
+    </script>
+</body>
+</html>

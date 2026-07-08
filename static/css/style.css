@@ -1,0 +1,479 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #00a884; /* Hijau WhatsApp */
+    --primary-dark: #008069;
+    --secondary-color: #1fa855;
+    --danger-color: #ef4444;
+    --background: #efeae2; /* BG chat khas WA */
+    --surface: #f0f2f5;    /* Header & input WA */
+    --text-primary: #111b21;
+    --text-secondary: #667781;
+    --border: #e2e8f0;
+    
+    /* Warna Obrolan WhatsApp */
+    --message-sent: #d9fdd3;
+    --message-received: #ffffff;
+    --text-sent: #111b21;
+    --text-received: #111b21;
+    --text-time: #667781;
+    
+    --online: #1fa855;
+    --offline: #8696a0;
+}
+
+/* Theme classes (explicit override when set on <html>) */
+html.theme-light {
+    --background: #efeae2;
+    --surface: #f0f2f5;
+    --text-primary: #111b21;
+    --text-secondary: #667781;
+    --border: rgba(0, 0, 0, 0.08);
+    --message-sent: #d9fdd3;
+    --message-received: #ffffff;
+    --text-sent: #111b21;
+}
+
+html.theme-dark {
+    --background: #0b141a; /* WhatsApp Dark Mode */
+    --surface: #202c33;
+    --text-primary: #e9edef;
+    --text-secondary: #8696a0;
+    --border: #2f3b43;
+    --message-sent: #005c4b;
+    --message-received: #202c33;
+    --text-sent: #e9edef;
+    --text-time: #8696a1;
+}
+
+/* Smooth color transitions when switching themes */
+html, body, .chat-container, .message-bubble, .chat-header, .input-area {
+    transition: background-color 220ms ease, color 220ms ease, border-color 220ms ease;
+}
+
+/* Theme toggle button */
+.btn-theme {
+    background: none;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    transition: background-color 0.2s;
+}
+
+.btn-theme:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--background);
+    color: var(--text-primary);
+}
+
+/* ============================================================================
+   UTILITY CLASSES & CARDS (Dipertahankan dari kode lama Anda)
+   ============================================================================ */
+
+.container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.card {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border);
+}
+
+.welcome-card {
+    width: 100%;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.header { text-align: center; margin-bottom: 30px; }
+.logo { font-size: 48px; margin-bottom: 15px; }
+.header h1 { font-size: 28px; margin-bottom: 5px; color: var(--text-primary); }
+.subtitle { color: var(--text-secondary); font-size: 14px; }
+
+/* ============================================================================
+   FORMS & BUTTONS (Dipertahankan dari kode lama Anda)
+   ============================================================================ */
+
+.form-section { margin-bottom: 20px; }
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-primary); font-size: 14px; }
+.form-group input, .form-group textarea {
+    width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 14px; font-family: inherit; transition: all 0.2s; background: var(--surface); color: var(--text-primary);
+}
+.form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.1); }
+.form-group small { display: block; margin-top: 5px; color: var(--text-secondary); font-size: 12px; }
+
+.btn {
+    padding: 12px 24px; border: none; border-radius: 8px; font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; display: inline-block; text-align: center; text-decoration: none; width: 100%; font-family: inherit;
+}
+.btn-primary { background-color: var(--primary-color); color: white; }
+.btn-primary:hover { background-color: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 168, 132, 0.2); }
+.btn-primary:active { transform: translateY(0); }
+.btn-secondary { background-color: var(--border); color: var(--text-primary); margin-top: 10px; }
+.btn-secondary:hover { background-color: rgba(0,0,0,0.1); }
+
+/* Tombol Icon Input */
+.btn-icon {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.2s;
+    color: var(--text-secondary);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-icon:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+}
+
+.btn-send {
+    background: none;
+    color: var(--primary-color);
+    border: none;
+    padding: 5px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 22px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-send:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Komponen Tambahan Lama */
+.divider { text-align: center; margin: 20px 0; color: var(--text-secondary); font-size: 14px; position: relative; }
+.divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background-color: var(--border); }
+.divider::before { left: 0; } .divider::after { right: 0; }
+.info-section { margin-bottom: 20px; }
+.info-section h3 { font-size: 14px; margin-bottom: 8px; color: var(--text-primary); }
+.info-section p { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+.info-box { background-color: var(--background); padding: 12px; border-radius: 8px; border-left: 3px solid var(--primary-color); font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 10px; }
+.features { background-color: var(--background); padding: 15px; border-radius: 8px; margin-top: 15px; }
+.features h3 { font-size: 13px; margin-bottom: 10px; color: var(--text-primary); }
+.features ul { list-style: none; }
+.features li { font-size: 12px; color: var(--text-secondary); padding: 5px 0; }
+
+/* Modals & QR (Dipertahankan) */
+.modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.2s ease-out; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-content { background: var(--surface); border-radius: 12px; padding: 30px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15); animation: slideUp 0.3s ease-out; }
+.spinner { border: 4px solid var(--border); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.link-container { display: flex; gap: 10px; margin-bottom: 20px; }
+.link-container input { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; background: var(--background); color: var(--text-primary); }
+.qr-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; padding: 15px; background-color: var(--background); border-radius: 8px; }
+
+/* ============================================================================
+   CHAT LAYOUT (GAYA WHATSAPP DINAMIS & ASIMETRIS)
+   ============================================================================ */
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 1100px;
+    margin: 0 auto;
+    background-color: var(--background);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+}
+
+.chat-header {
+    background-color: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    z-index: 10;
+}
+
+.header-center {
+    flex: 1;
+    text-align: left; /* Rata kiri seperti WhatsApp asli */
+}
+
+.other-user {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.online {
+    background-color: var(--online);
+    box-shadow: 0 0 0 2px rgba(31, 168, 85, 0.2);
+}
+
+.status-dot.offline {
+    background-color: var(--offline);
+    animation: none;
+    box-shadow: none;
+}
+
+/* ============================================================================
+   MESSAGES AREA (Dengan Background Pola WhatsApp)
+   ============================================================================ */
+
+.messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 6%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    /* Efek Pola Polkadot Halus WhatsApp */
+    background-image: radial-gradient(rgba(0,0,0,0.03) 1px, transparent 0);
+    background-size: 20px 20px;
+}
+
+html.theme-dark .messages-area {
+    background-image: radial-gradient(rgba(255,255,255,0.02) 1px, transparent 0);
+}
+
+.messages-area::-webkit-scrollbar { width: 6px; }
+.messages-area::-webkit-scrollbar-track { background: transparent; }
+.messages-area::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+
+/* ============================================================================
+   CHAT BUBBLES (WhatsApp Style)
+   ============================================================================ */
+
+.message {
+    display: flex;
+    margin-bottom: 2px;
+    animation: messageAppear 0.2s ease-out;
+}
+
+@keyframes messageAppear {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.message.sent { justify-content: flex-end; }
+.message.received { justify-content: flex-start; }
+
+.message-bubble {
+    max-width: 65%;
+    padding: 6px 12px 8px 12px;
+    border-radius: 8px;
+    position: relative;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+/* Ekor Bubble Kanan-Kiri */
+.message.sent .message-bubble {
+    background-color: var(--message-sent);
+    color: var(--text-sent);
+    border-top-right-radius: 0px;
+}
+
+.message.received .message-bubble {
+    background-color: var(--message-received);
+    color: var(--text-primary);
+    border-top-left-radius: 0px;
+}
+
+.message-sender {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 2px;
+}
+.message.sent .message-sender { display: none; } /* Nama sendiri disembunyikan di bubble */
+
+.message-content {
+    font-size: 14.5px;
+    line-height: 1.4;
+    word-break: break-word;
+    white-space: pre-wrap;
+    padding-right: 50px; /* Supaya teks panjang tidak menabrak jam di pojok */
+}
+
+.message-time {
+    font-size: 11px;
+    color: var(--text-secondary);
+    position: absolute;
+    bottom: 4px;
+    right: 8px;
+    opacity: 0.85;
+}
+
+.message-image {
+    max-width: 100%;
+    max-height: 280px;
+    object-fit: cover;
+    border-radius: 6px;
+    display: block;
+    margin-top: 4px;
+}
+
+/* ============================================================================
+   INPUT AREA
+   ============================================================================ */
+
+.input-area {
+    background-color: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 10px 16px;
+}
+
+.input-container {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.input-container textarea {
+    flex: 1;
+    min-height: 42px;
+    max-height: 120px;
+    padding: 11px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: none;
+    background: var(--message-received); /* Menyesuaikan warna bubble masuk agar kontras */
+    color: var(--text-primary);
+    box-shadow: inset 0 1px 1px rgba(0,0,0,0.03);
+}
+
+.input-container textarea:focus {
+    outline: none;
+}
+
+.char-count {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: right;
+    margin-top: 2px;
+}
+
+/* ============================================================================
+   NOTIFICATIONS
+   ============================================================================ */
+
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 320px;
+}
+
+.notification {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    color: white;
+}
+
+.notification-success { background-color: var(--secondary-color); }
+.notification-error { background-color: var(--danger-color); }
+.notification-info { background-color: #323739; }
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .chat-container {
+        height: 100vh;
+        width: 100%;
+        max-width: none;
+        border-radius: 0;
+    }
+    
+    .messages-area {
+        padding: 15px 4%;
+    }
+
+    .message-bubble {
+        max-width: 85%;
+    }
+}
+
+/* Media preference fallback jika JS theme bermasalah */
+@media (prefers-color-scheme: dark) {
+    html:not(.theme-light) {
+        --background: #0b141a;
+        --surface: #202c33;
+        --text-primary: #e9edef;
+        --text-secondary: #8696a0;
+        --border: #2f3b43;
+        --message-sent: #005c4b;
+        --message-received: #202c33;
+        --text-sent: #e9edef;
+    }
+}
